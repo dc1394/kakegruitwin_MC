@@ -1,4 +1,11 @@
-﻿#include "../checkpoint/checkpoint.h"
+﻿/*! \file kakegruitwin_mc.cpp
+\brief 賭ケグルイ双(1)のpp.100-124の内容を、モンテカルロ・シミュレーションで確かめる
+
+Copyright © 2017 @dc1394 All Rights Reserved.
+This software is released under the BSD 2-Clause License.
+*/
+
+#include "../checkpoint/checkpoint.h"
 #include "myrandom/myrand.h"
 #include <array>                       	// for std::array
 #include <cstdint>  	               	// for std::uint32_t
@@ -7,13 +14,17 @@
 #include <iostream> 	               	// for std::cout
 #include <string>                      	// for std::string
 #include <utility>                      // for std::move
-#ifdef _CHECK_PARALELL_PERFORM
+#ifdef _CHECK_PARALLEL_PERFORM
     #include <vector>   	            // for std::vector
 #endif
 #include <boost/container/flat_map.hpp>	// for boost::container::flat_map
 #include <tbb/concurrent_hash_map.h>    // for tbb::concurrent_hash_map
 #include <tbb/concurrent_vector.h>     	// for tbb::concurrent_vector
-#include <tbb/parallel_for.h>           // for tbb::parallel_for
+#ifdef __INTEL_COMPILER
+    #include <cilk/cilk.h>              // for cilk_for
+#else
+    #include <tbb/parallel_for.h>       // for tbb::parallel_for
+#endif
 
 namespace {
     //! A global variable (constant expression).
@@ -45,7 +56,7 @@ namespace {
         文字列のペア
     */
     using strpair = std::pair<std::string, std::string>;
-    
+
     //! A struct.
     /*!
         strpairを扱うハッシュと比較操作を定義する構造体
@@ -82,7 +93,7 @@ namespace {
         各文字列の順列に対応する勝利回数の結果を格納するtbb::concurrent_hash_map
     */
     using myhashmap = tbb::concurrent_hash_map<strpair, std::uint32_t, MyHashCompare>;
-    
+
     //! A typedef.
     /*!
         文字列のペアと、どちらの文字列が勝ったかのstd::pair
@@ -94,7 +105,7 @@ namespace {
         文字列のペアと、文字列の勝利数のstd::pair
     */
     using mymap3 = boost::container::flat_map<strpair, std::uint32_t>;
-    
+
     //! A function.
     /*!
         文字列の可能な順列を列挙する
@@ -108,7 +119,7 @@ namespace {
     */
     static std::array<strpair, 56U> const cbarray = makecombination();
 
-#ifdef _CHECK_PARALELL_PERFORM
+#ifdef _CHECK_PARALLEL_PERFORM
     //! A function.
     /*!
         文字列のペアの、前者が勝利した回数を集計する
@@ -134,19 +145,17 @@ namespace {
     */
     inline auto makerandomudstr(myrandom::MyRand & mr);
 
-#ifdef _CHECK_PARALELL_PERFORM
     //! A function.
     /*!
         モンテカルロ・シミュレーションを行う
-        \return 期待値と、どちらの文字列が先に出現したかどうかのモンテカルロ・シミュレーションの結果のstd::pair    
+        \return 期待値と、どちらの文字列が先に出現したかどうかのモンテカルロ・シミュレーションの結果のstd::pair
     */
     std::pair<std::vector<mymap>, std::vector<mymap2> > montecarlo();
-#endif
 
     //! A function.
     /*!
-        モンテカルロ・シミュレーションをTBBで並列化して行う
-        \return 期待値と、どちらの文字列が先に出現したかどうかのモンテカルロ・シミュレーションの結果のstd::pair
+    モンテカルロ・シミュレーションをTBBで並列化して行う
+    \return 期待値と、どちらの文字列が先に出現したかどうかのモンテカルロ・シミュレーションの結果のstd::pair
     */
     std::pair< tbb::concurrent_vector<mymap>, tbb::concurrent_vector<mymap2> > montecarloTBB();
 
@@ -190,7 +199,7 @@ int main()
 
     cp.checkpoint("処理開始", __LINE__);
 
-#ifdef _CHECK_PARALELL_PERFORM
+#ifdef _CHECK_PARALLEL_PERFORM
     {
         // モンテカルロ・シミュレーションの結果を代入
         auto const mcresult(montecarlo());
@@ -204,7 +213,7 @@ int main()
 
     // モンテカルロ・シミュレーションの結果を代入
     auto const mcresultTBB(montecarloTBB());
-    
+
     // 各文字列のペアに対する勝率を計算する
     auto const trialwinningavg(aggregateWinningAvg(mcresultTBB.second));
 
@@ -212,16 +221,16 @@ int main()
 
     // 期待値に対するモンテカルロ・シミュレーションの結果の和を計算する
     auto const trialavg(sumMontecarloAvg(mcresultTBB.first));
-    
+
     // 各文字列に対する期待値の表示
     std::cout << std::setprecision(1) << std::setiosflags(std::ios::fixed);
     for (auto && itr = trialavg.begin(); itr != trialavg.end(); ++itr) {
         std::cout << itr->first
-                  << " が出るまでの期待値: "
-                  << static_cast<double>(itr->second) / static_cast<double>(MCMAX)
-                  << "回\n";
+            << " が出るまでの期待値: "
+            << static_cast<double>(itr->second) / static_cast<double>(MCMAX)
+            << "回\n";
     }
-    
+
     // 各文字列のペアに対する勝率の表示
     std::cout << "\n    ";
     for (auto i = 0; i < 8; i++) {
@@ -239,7 +248,7 @@ int main()
             }
             else {
                 std::cout << static_cast<double>(itr->second) / static_cast<double>(MCMAX) * 100.0
-                          << ' ';
+                    << ' ';
                 ++itr;
             }
         }
@@ -254,7 +263,7 @@ int main()
 }
 
 namespace {
-#ifdef _CHECK_PARALELL_PERFORM
+#ifdef _CHECK_PARALLEL_PERFORM
     mymap3 aggregateWinningAvg(std::vector<mymap2> const & mcresultwinningavg)
     {
         // 各文字列の順列に対応する勝利回数の結果を格納するboost::container::flat_map
@@ -291,10 +300,14 @@ namespace {
         }
 
         // 試行回数分繰り返す
+#ifdef __INTEL_COMPILER
+        cilk_for (auto i = 0U; i < MCMAX; i++) {
+#else
         tbb::parallel_for(
             tbb::blocked_range<std::uint32_t>(0U, MCMAX),
             [&mcresultwinningavg, &trial](auto const & range) {
             for (auto && i = range.begin(); i != range.end(); ++i) {
+#endif
                 auto const mcr = mcresultwinningavg[i];
                 for (auto && itr = mcr.begin(); itr != mcr.end(); ++itr) {
                     if (itr->second) {
@@ -304,8 +317,9 @@ namespace {
                     }
                 }
             }
+#ifndef __INTEL_COMPILER
         });
-
+#endif
         // boost::container::flat_mapに計算結果を複写
         boost::container::flat_map<strpair, std::uint32_t> trialwinningavg;
         for (auto && res : trial) {
@@ -313,7 +327,7 @@ namespace {
         }
 
         return trialwinningavg;
-    }
+        }
 
 
     std::array<strpair, 56U> makecombination()
@@ -347,11 +361,11 @@ namespace {
             c = mr.myrand() > 3 ? 'U' : 'D';
         }
 
-		// UDのランダム文字列を返す
+        // UDのランダム文字列を返す
         return udstring;
     }
 
-#ifdef _CHECK_PARALELL_PERFORM
+#ifdef _CHECK_PARALLEL_PERFORM
     std::pair<std::vector<mymap>, std::vector<mymap2> > montecarlo()
     {
         // 期待値に対するモンテカルロ・シミュレーションの結果を格納するための可変長配列
@@ -363,7 +377,7 @@ namespace {
         // MCMAX個の容量を確保
         mcresultavg.reserve(MCMAX);
         mcresultwinningavg.reserve(MCMAX);
-        
+
         // 自作乱数クラスを初期化
         myrandom::MyRand mr(1, 6);
 
@@ -378,7 +392,7 @@ namespace {
 
         return std::make_pair(std::move(mcresultavg), std::move(mcresultwinningavg));
     }
-#endif
+#endif    
 
     std::pair<tbb::concurrent_vector<mymap>, tbb::concurrent_vector<mymap2> > montecarloTBB()
     {
@@ -391,22 +405,30 @@ namespace {
         // MCMAX個の容量を確保
         mcresultavg.reserve(MCMAX);
         mcresultwinningavg.reserve(MCMAX);
-        
+
         // 試行回数分繰り返す
+#ifdef __INTEL_COMPILER
+        cilk_for(auto i = 0U; i < MCMAX; i++) {
+#else
         tbb::parallel_for(
             0U,
             MCMAX,
             1U,
             [&mcresultavg, &mcresultwinningavg](auto) {
-                // 自作乱数クラスを初期化
-                myrandom::MyRand mr(1, 6);
+#endif
+            // 自作乱数クラスを初期化
+            myrandom::MyRand mr(1, 6);
 
-                // 期待値に対するモンテカルロ・シミュレーションの結果を代入
-                mcresultavg.push_back(montecarloImplAvg(mr));
+            // 期待値に対するモンテカルロ・シミュレーションの結果を代入
+            mcresultavg.push_back(montecarloImplAvg(mr));
 
-                // どちらの文字列が先に出現したかどうかのモンテカルロ・シミュレーションの結果を代入
-                mcresultwinningavg.push_back(montecarloImplWinningAvg(mr));
+            // どちらの文字列が先に出現したかどうかのモンテカルロ・シミュレーションの結果を代入
+            mcresultwinningavg.push_back(montecarloImplWinningAvg(mr));
+#ifdef __INTEL_COMPILER
+        }
+#else
         });
+#endif
 
         return std::make_pair(std::move(mcresultavg), std::move(mcresultwinningavg));
     }
@@ -426,7 +448,7 @@ namespace {
 
         return result;
     }
-        
+
     mymap2 montecarloImplWinningAvg(myrandom::MyRand & mr)
     {
         // UDのランダム文字列
@@ -443,17 +465,17 @@ namespace {
         // 検索結果を返す
         return result;
     }
-        
+
     std::uint32_t myfind(std::string const & str, std::string const & udstr)
     {
         // 文字列の位置を検索
         auto const pos = udstr.find(str);
-        
+
         // posをその文字列の末尾の位置に変換
         // もし文字列が見つかっていなかった場合はRANDNUMTABLELENに変換
         return pos != std::string::npos ? static_cast<std::uint32_t>(pos + 3) : RANDNUMTABLELEN;
     }
-    
+
     template <typename T>
     mymap sumMontecarloAvg(T const & mcresultavg)
     {
