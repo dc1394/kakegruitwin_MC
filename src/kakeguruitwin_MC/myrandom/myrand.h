@@ -60,7 +60,7 @@ namespace myrandom {
         /*!
             初期乱数生成用のstd::vectorのサイズ
         */
-        static std::vector<std::uint_least32_t>::size_type const SIZE = 64;
+        static std::vector<std::uint_least32_t>::size_type const SIZE = 8;
 
         //! A private member variable.
         /*!

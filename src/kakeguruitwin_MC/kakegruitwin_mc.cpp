@@ -1,4 +1,11 @@
-﻿#include "../checkpoint/checkpoint.h"
+﻿/*! \file kakegruitwin_mc.cpp
+    \brief 賭ケグルイ双(1)のpp.100-124の内容を、モンテカルロ・シミュレーションで確かめる
+
+    Copyright © 2017 @dc1394 All Rights Reserved.
+    This software is released under the BSD 2-Clause License.
+*/
+
+#include "../checkpoint/checkpoint.h"
 #include "myrandom/myrand.h"
 #include <array>                       	// for std::array
 #include <cstdint>  	               	// for std::uint32_t
@@ -13,7 +20,11 @@
 #include <boost/container/flat_map.hpp>	// for boost::container::flat_map
 #include <tbb/concurrent_hash_map.h>    // for tbb::concurrent_hash_map
 #include <tbb/concurrent_vector.h>     	// for tbb::concurrent_vector
-#include <tbb/parallel_for.h>           // for tbb::parallel_for
+#ifdef __INTEL_COMPILER
+    #include <cilk/cilk.h>              // for cilk_for
+#else
+    #include <tbb/parallel_for.h>       // for tbb::parallel_for
+#endif
 
 namespace {
     //! A global variable (constant expression).
@@ -108,6 +119,7 @@ namespace {
     */
     static std::array<strpair, 56U> const cbarray = makecombination();
 
+#ifdef _CHECK_PARALLEL_PERFORM
     //! A function.
     /*!
         文字列のペアの、前者が勝利した回数を集計する
@@ -115,6 +127,7 @@ namespace {
         \return 文字列のペアの、前者が勝利した回数が格納された連想配列
     */
     mymap3 aggregateWinningAvg(std::vector<mymap2> const & mcresultwinningavg);
+#endif
 
     //! A function.
     /*!
@@ -250,6 +263,7 @@ int main()
 }
 
 namespace {
+#ifdef _CHECK_PARALLEL_PERFORM
     mymap3 aggregateWinningAvg(std::vector<mymap2> const & mcresultwinningavg)
     {
         // 各文字列の順列に対応する勝利回数の結果を格納するboost::container::flat_map
@@ -271,6 +285,7 @@ namespace {
 
         return trialwinningavg;
     }
+#endif
 
     mymap3 aggregateWinningAvg(tbb::concurrent_vector<mymap2> const & mcresultwinningavg)
     {
@@ -285,10 +300,14 @@ namespace {
         }
 
         // 試行回数分繰り返す
+#ifdef __INTEL_COMPILER
+        cilk_for (auto i = 0U; i < MCMAX; i++) {
+#else
         tbb::parallel_for(
             tbb::blocked_range<std::uint32_t>(0U, MCMAX),
             [&mcresultwinningavg, &trial](auto const & range) {
             for (auto && i = range.begin(); i != range.end(); ++i) {
+#endif
                 auto const mcr = mcresultwinningavg[i];
                 for (auto && itr = mcr.begin(); itr != mcr.end(); ++itr) {
                     if (itr->second) {
@@ -298,8 +317,9 @@ namespace {
                     }
                 }
             }
+#ifndef __INTEL_COMPILER
         });
-
+#endif
         // boost::container::flat_mapに計算結果を複写
         boost::container::flat_map<strpair, std::uint32_t> trialwinningavg;
         for (auto && res : trial) {
@@ -345,6 +365,7 @@ namespace {
         return udstring;
     }
 
+#ifdef _CHECK_PARALLEL_PERFORM
     std::pair<std::vector<mymap>, std::vector<mymap2> > montecarlo()
     {
         // 期待値に対するモンテカルロ・シミュレーションの結果を格納するための可変長配列
@@ -371,7 +392,8 @@ namespace {
 
         return std::make_pair(std::move(mcresultavg), std::move(mcresultwinningavg));
     }
-    
+#endif    
+
     std::pair<tbb::concurrent_vector<mymap>, tbb::concurrent_vector<mymap2> > montecarloTBB()
     {
         // 期待値に対するモンテカルロ・シミュレーションの結果を格納するための可変長配列
@@ -385,11 +407,15 @@ namespace {
         mcresultwinningavg.reserve(MCMAX);
         
         // 試行回数分繰り返す
+#ifdef __INTEL_COMPILER
+        cilk_for (auto i = 0U; i < MCMAX; i++) {
+#else
         tbb::parallel_for(
             0U,
             MCMAX,
             1U,
             [&mcresultavg, &mcresultwinningavg](auto) {
+#endif
                 // 自作乱数クラスを初期化
                 myrandom::MyRand mr(1, 6);
 
@@ -398,7 +424,11 @@ namespace {
 
                 // どちらの文字列が先に出現したかどうかのモンテカルロ・シミュレーションの結果を代入
                 mcresultwinningavg.push_back(montecarloImplWinningAvg(mr));
+#ifdef __INTEL_COMPILER
+        }
+#else
         });
+#endif
 
         return std::make_pair(std::move(mcresultavg), std::move(mcresultwinningavg));
     }
