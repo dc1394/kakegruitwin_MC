@@ -7,7 +7,7 @@
 #include <iostream> 	               	// for std::cout
 #include <string>                      	// for std::string
 #include <utility>                      // for std::move
-#ifdef _CHECK_PARALLEL_PERFORM
+#ifdef _CHECK_PARALELL_PERFORM
     #include <vector>   	            // for std::vector
 #endif
 #include <boost/container/flat_map.hpp>	// for boost::container::flat_map
@@ -108,6 +108,7 @@ namespace {
     */
     static std::array<strpair, 56U> const cbarray = makecombination();
 
+#ifdef _CHECK_PARALELL_PERFORM
     //! A function.
     /*!
         文字列のペアの、前者が勝利した回数を集計する
@@ -115,6 +116,7 @@ namespace {
         \return 文字列のペアの、前者が勝利した回数が格納された連想配列
     */
     mymap3 aggregateWinningAvg(std::vector<mymap2> const & mcresultwinningavg);
+#endif
 
     //! A function.
     /*!
@@ -132,12 +134,14 @@ namespace {
     */
     inline auto makerandomudstr(myrandom::MyRand & mr);
 
+#ifdef _CHECK_PARALELL_PERFORM
     //! A function.
     /*!
         モンテカルロ・シミュレーションを行う
         \return 期待値と、どちらの文字列が先に出現したかどうかのモンテカルロ・シミュレーションの結果のstd::pair    
     */
     std::pair<std::vector<mymap>, std::vector<mymap2> > montecarlo();
+#endif
 
     //! A function.
     /*!
@@ -186,7 +190,7 @@ int main()
 
     cp.checkpoint("処理開始", __LINE__);
 
-#ifdef _CHECK_PARALLEL_PERFORM
+#ifdef _CHECK_PARALELL_PERFORM
     {
         // モンテカルロ・シミュレーションの結果を代入
         auto const mcresult(montecarlo());
@@ -250,6 +254,7 @@ int main()
 }
 
 namespace {
+#ifdef _CHECK_PARALELL_PERFORM
     mymap3 aggregateWinningAvg(std::vector<mymap2> const & mcresultwinningavg)
     {
         // 各文字列の順列に対応する勝利回数の結果を格納するboost::container::flat_map
@@ -271,6 +276,7 @@ namespace {
 
         return trialwinningavg;
     }
+#endif
 
     mymap3 aggregateWinningAvg(tbb::concurrent_vector<mymap2> const & mcresultwinningavg)
     {
@@ -345,6 +351,7 @@ namespace {
         return udstring;
     }
 
+#ifdef _CHECK_PARALELL_PERFORM
     std::pair<std::vector<mymap>, std::vector<mymap2> > montecarlo()
     {
         // 期待値に対するモンテカルロ・シミュレーションの結果を格納するための可変長配列
@@ -371,7 +378,8 @@ namespace {
 
         return std::make_pair(std::move(mcresultavg), std::move(mcresultwinningavg));
     }
-    
+#endif
+
     std::pair<tbb::concurrent_vector<mymap>, tbb::concurrent_vector<mymap2> > montecarloTBB()
     {
         // 期待値に対するモンテカルロ・シミュレーションの結果を格納するための可変長配列

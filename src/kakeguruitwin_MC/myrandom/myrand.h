@@ -60,7 +60,7 @@ namespace myrandom {
         /*!
             初期乱数生成用のstd::vectorのサイズ
         */
-        static std::vector<std::uint_least32_t>::size_type const SIZE = 64;
+        static std::vector<std::uint_least32_t>::size_type const SIZE = 8;
 
         //! A private member variable.
         /*!
@@ -109,8 +109,10 @@ namespace myrandom {
         std::vector<std::uint_least32_t> v(SIZE);
 
         // ベクタの初期化
+        // 非決定的な乱数でシード列を構築する
         boost::generate(v, std::ref(rnd));
 
+        // シード列を生成
         std::seed_seq seq(v.begin(), v.end());
 
         // 乱数エンジン
