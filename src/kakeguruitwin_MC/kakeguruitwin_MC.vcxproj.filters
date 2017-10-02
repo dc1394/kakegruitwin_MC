@@ -16,15 +16,42 @@
     <Filter Include="ヘッダー ファイル\myrandom">
       <UniqueIdentifier>{ee1c4d11-2bbd-4824-bf71-93e59205f7a6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\goexit">
+      <UniqueIdentifier>{c8198d45-4bda-4398-a829-426b25d2c55d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\goexit">
+      <UniqueIdentifier>{d2b0ebfd-59a1-4380-b54a-edb2d5273a29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\SFMT">
+      <UniqueIdentifier>{47bd8006-3c77-4cc2-8408-87853a42c8c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\SFMT">
+      <UniqueIdentifier>{8d3ac5dc-90de-47d8-ac3f-92bc503c79e6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="myrandom\myrand.h">
       <Filter>ヘッダー ファイル\myrandom</Filter>
     </ClInclude>
+    <ClInclude Include="goexit\goexit.h">
+      <Filter>ヘッダー ファイル\goexit</Filter>
+    </ClInclude>
+    <ClInclude Include="myrandom\myrandsfmt.h">
+      <Filter>ヘッダー ファイル\myrandom</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SFMT-src-1.5.1\SFMT.h">
+      <Filter>ヘッダー ファイル\SFMT</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="kakegruitwin_mc.cpp">
+    <ClCompile Include="kakeguruitwin_mc.cpp">
       <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="goexit\goexit.cpp">
+      <Filter>ソース ファイル\goexit</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SFMT-src-1.5.1\SFMT.c">
+      <Filter>ソース ファイル\SFMT</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
