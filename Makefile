@@ -10,7 +10,7 @@ CC = clang
 CFLAGS = -Wextra -O3 -pipe
 CXX = clang++
 CXXFLAGS = -Wextra -O3 -pipe -std=c++17
-LDFLAGS = -L/home/dc1394/oss/tbb2018_20170919oss/lib/intel64/gcc4.7 -ltbb
+LDFLAGS = -ltbb
 
 all: $(PROG) ;
 #rm -f $(OBJS) $(DEPS)
