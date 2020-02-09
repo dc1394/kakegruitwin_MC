@@ -11,11 +11,8 @@
 #pragma once
 
 #include "../../SFMT-src-1.5.1/SFMT.h"
-#include <cstdint>						// for std::int32_t, std::uint32_t, std::uint_least32_t
-#include <functional>					// for std::ref
+#include <cstdint>						// for std::int32_t
 #include <random>                       // for std::random_device
-#include <vector>						// for std::vector
-#include <boost/range/algorithm.hpp>    // for boost::generate
 
 namespace myrandom {
     //! A class.
@@ -58,12 +55,6 @@ namespace myrandom {
         // #region メンバ変数
 
     private:
-        //! A private static member variable (constant expression).
-        /*!
-            初期乱数生成用のstd::vectorのサイズ
-        */
-        static std::vector<std::uint_least32_t>::size_type const SIZE = 1;
-
 		//! A private member variable.
 		/*!
 			乱数分布の最大値
@@ -93,36 +84,30 @@ namespace myrandom {
         //! A private copy constructor (deleted).
         /*!
             コピーコンストラクタ（禁止）
+            \param dummy コピー元のオブジェクト（未使用）
         */
-        MyRandSfmt(const MyRandSfmt &) = delete;
+        MyRandSfmt(MyRandSfmt const & dummy) = delete;
 
         //! A private member function (deleted).
         /*!
             operator=()の宣言（禁止）
-            \param コピー元のオブジェクト（未使用）
+            \param dummy コピー元のオブジェクト（未使用）
             \return コピー元のオブジェクト
         */
-        MyRandSfmt & operator=(const MyRandSfmt &) = delete;
+        MyRandSfmt & operator=(const MyRandSfmt & dummy) = delete;
 
         // #endregion 禁止されたコンストラクタ・メンバ関数
     };
 
-    MyRandSfmt::MyRandSfmt(std::int32_t min, std::int32_t max)
+    inline MyRandSfmt::MyRandSfmt(std::int32_t min, std::int32_t max)
 		: max_(max),
 		  min_(min)
     {
         // ランダムデバイス
         std::random_device rnd;
 
-        // 初期化用ベクタ
-        std::vector<std::uint_least32_t> v(SIZE);
-
-        // ベクタの初期化
-        // 非決定的な乱数でシード列を構築する
-        boost::generate(v, std::ref(rnd));
-
         // 乱数エンジン
-		sfmt_init_gen_rand(&sfmt, v[0]);
+		sfmt_init_gen_rand(&sfmt, rnd());
     }
 }
 

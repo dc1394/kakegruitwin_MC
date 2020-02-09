@@ -18,11 +18,7 @@
 #include <boost/container/flat_map.hpp>	// for boost::container::flat_map
 #include <tbb/concurrent_hash_map.h>    // for tbb::concurrent_hash_map
 #include <tbb/concurrent_vector.h>     	// for tbb::concurrent_vector
-#ifdef __INTEL_COMPILER
-	#include <cilk/cilk.h>              // for cilk_for
-#else
-    #include <tbb/parallel_for.h>       // for tbb::parallel_for
-#endif
+#include <tbb/parallel_for.h>           // for tbb::parallel_for
 
 namespace {
     //! A global variable (constant expression).
@@ -305,14 +301,10 @@ namespace {
         }
 
         // MCMAX回のループを並列化して実行
-#ifdef __INTEL_COMPILER
-        cilk_for (auto i = 0U; i < MCMAX; i++) {
-#else
         tbb::parallel_for(
             tbb::blocked_range<std::uint32_t>(0U, MCMAX),
             [&mcresultwinningavg, &trial](auto const & range) {
             for (auto && i = range.begin(); i != range.end(); ++i) {
-#endif
                 auto const mcr = mcresultwinningavg[i];
                 for (auto && itr = mcr.begin(); itr != mcr.end(); ++itr) {
                     if (itr->second) {
@@ -321,12 +313,8 @@ namespace {
                         a->second++;
                     }
                 }
-#ifdef __INTEL_COMPILER
-            }
-#else
             }
         });
-#endif
 
         // boost::container::flat_mapに計算結果を複写
         boost::container::flat_map<strpair, std::uint32_t> trialwinningavg;
@@ -397,10 +385,10 @@ namespace {
         // 試行回数分繰り返す
         for (auto i = 0U; i < MCMAX; i++) {
             // 期待値に対するモンテカルロ・シミュレーションの結果を代入
-            mcresultavg.push_back(montecarloImplAvg(mr));
+            mcresultavg.emplace_back(montecarloImplAvg(mr));
 
             // どちらの文字列が先に出現したかどうかのモンテカルロ・シミュレーションの結果を代入
-            mcresultwinningavg.push_back(montecarloImplWinningAvg(mr));
+            mcresultwinningavg.emplace_back(montecarloImplWinningAvg(mr));
         }
 
         return std::make_pair(std::move(mcresultavg), std::move(mcresultwinningavg));
@@ -420,15 +408,11 @@ namespace {
         mcresultwinningavg.reserve(MCMAX);
         
         // MCMAX回のループを並列化して実行
-#ifdef __INTEL_COMPILER
-        cilk_for (auto n = 0U; n < MCMAX; n++) {
-#else
         tbb::parallel_for(
             0U,
             MCMAX,
             1U,
-            [&mcresultavg, &mcresultwinningavg](auto) {
-#endif
+            [&](auto) {
 
 #ifdef HAVE_SSE2
 		        // 自作乱数クラスを初期化
@@ -439,16 +423,11 @@ namespace {
 #endif
 
                 // 期待値に対するモンテカルロ・シミュレーションの結果を代入
-                mcresultavg.push_back(montecarloImplAvg(mr));
+                mcresultavg.emplace_back(montecarloImplAvg(mr));
 
                 // どちらの文字列が先に出現したかどうかのモンテカルロ・シミュレーションの結果を代入
-                mcresultwinningavg.push_back(montecarloImplWinningAvg(mr));
-
-#ifdef __INTEL_COMPILER
-            }
-#else
+                mcresultwinningavg.emplace_back(montecarloImplWinningAvg(mr));
         });
-#endif
 
         return std::make_pair(std::move(mcresultavg), std::move(mcresultwinningavg));
     }
