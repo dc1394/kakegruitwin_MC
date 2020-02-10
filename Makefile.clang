@@ -6,9 +6,9 @@ DEPS = checkpoint.d goexit.d kakeguruitwin_mc.d SFMT.d
 
 VPATH  = src/checkpoint src/kakeguruitwin_MC src/kakeguruitwin_MC/myrandom \
 		 src/kakeguruitwin_MC/goexit src/SFMT-src-1.5.1
-CC = gcc
+CC = clang
 CFLAGS = -Wall -Wextra -O3 -mtune=native -march=native -pipe
-CXX = g++
+CXX = clang++
 CXXFLAGS = -Wall -Wextra -O3 -mtune=native -march=native -pipe -std=c++17
 LDFLAGS = -ltbb
 

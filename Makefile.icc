@@ -6,10 +6,10 @@ DEPS = checkpoint.d goexit.d kakeguruitwin_mc.d SFMT.d
 
 VPATH  = src/checkpoint src/kakeguruitwin_MC src/kakeguruitwin_MC/myrandom \
 		 src/kakeguruitwin_MC/goexit src/SFMT-src-1.5.1
-CC = gcc
-CFLAGS = -Wall -Wextra -O3 -mtune=native -march=native -pipe
-CXX = g++
-CXXFLAGS = -Wall -Wextra -O3 -mtune=native -march=native -pipe -std=c++17
+CC = icc
+CFLAGS = -Wall -Wextra -O3 -xHOST -ipo -pipe
+CXX = icpc
+CXXFLAGS = -Wall -Wextra -O3 -xHOST -ipo -pipe -std=c++17
 LDFLAGS = -ltbb
 
 all: $(PROG) ;
