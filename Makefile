@@ -10,7 +10,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -O3 -mtune=native -march=native -pipe
 CXX = g++
 CXXFLAGS = -Wall -Wextra -O3 -mtune=native -march=native -pipe -std=c++17
-LDFLAGS = -ltbb
+LDFLAGS = -L/home/dc1394/oss/tbb/lib/intel64/gcc4.8 -ltbb
 
 all: $(PROG) ;
 #rm -f $(OBJS) $(DEPS)
